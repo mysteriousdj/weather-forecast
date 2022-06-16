@@ -1,9 +1,9 @@
 // Set global variables, including Open Weather Maps API Key
-var owmAPI = "019d2c6b0cc79c4e61ce7bfbe6dc4c2e";
+var owmAPI = "788d5638d7c8e354a162d6c9747d1bdf";
 var currentCity = "";
 var lastCity = "";
 
-// Error handler for fetch, trying to mimic the AJAX .fail command: https://www.tjvantoll.com/2015/09/13/fetch-and-errors/
+
 var handleErrors = (response) => {
     if (!response.ok) {
         throw Error(response.statusText);
@@ -38,42 +38,39 @@ var getCurrentConditions = (event) => {
         renderCities();
         // Obtain the 5day forecast for the searched city
         getFiveDayForecast(event);
-        // Set the header text to the found city name
-        $('#header-text').text(response.name);
+     
         // HTML for the results of search
         let currentWeatherHTML = `
             <h3>${response.name} ${currentMoment.format("(MM/DD/YY)")}<img src="${currentWeatherIcon}"></h3>
             <ul class="list-unstyled">
                 <li>Temperature: ${response.main.temp}&#8457;</li>
-                <li>Humidity: ${response.main.humidity}%</li>
                 <li>Wind Speed: ${response.wind.speed} mph</li>
-                <li id="uvIndex">UV Index:</li>
+                <li>Humidity: ${response.main.humidity}%</li>
+                <li id="uvIndex">UV Index: ${response.main.uvIndex}</li>
             </ul>`;
         // Append the results to the DOM
         $('#current-weather').html(currentWeatherHTML);
-        // Get the latitude and longitude for the UV search from Open Weather Maps API
-        let latitude = response.coord.lat;
-        let longitude = response.coord.lon;
-        let uvQueryURL = "api.openweathermap.org/data/2.5/uvi?lat=" + latitude + "&lon=" + longitude + "&APPID=" + owmAPI;
-        // API solution for Cross-origin resource sharing (CORS) error: https://cors-anywhere.herokuapp.com/
-        uvQueryURL = "https://cors-anywhere.herokuapp.com/" + uvQueryURL;
-        // Fetch the UV information and build the color display for the UV index
-        fetch(uvQueryURL)
-        .then(handleErrors)
-        .then((response) => {
-            return response.json();
-        })
-        .then((response) => {
-            let uvIndex = response.value;
-            $('#uvIndex').html(`UV Index: <span id="uvVal"> ${uvIndex}</span>`);
-            if (uvIndex>=0 && uvIndex<3){
-                $('#uvVal').attr("class", "uv-favorable");
-            } else if (uvIndex>=3 && uvIndex<8){
-                $('#uvVal').attr("class", "uv-moderate");
-            } else if (uvIndex>=8){
-                $('#uvVal').attr("class", "uv-severe");
+  
+        function getColorCodeForUVIndex(uvIndex) {
+            var uvIndexValue = parseFloat(uvIndex);
+            var colorcode = "";
+            if (uvIndexValue <= 2) {
+              colorcode = "#00ff00";
             }
-        });
+            else if ((uvIndexValue > 2) && (uvIndexValue <= 5)) {
+              colorcode = "#ffff00";
+            }
+            else if ((uvIndexValue > 5) && (uvIndexValue <= 7)) {
+              colorcode = "#ffa500";
+            }
+            else if ((uvIndexValue > 7) && (uvIndexValue <= 10)) {
+              colorcode = "#9e1a1a";
+            }
+            else if (uvIndexValue > 10) {
+              colorcode = "#7f00ff";
+            }
+            return colorcode;
+          }
     })
 }
 
@@ -110,6 +107,7 @@ var getFiveDayForecast = (event) => {
                         <li class="weather-icon"><img src="${iconURL}"></li>
                         <li>Temp: ${dayData.main.temp}&#8457;</li>
                         <br>
+                        <li>Wind: ${dayData.main.wind} mph</li>
                         <li>Humidity: ${dayData.main.humidity}%</li>
                     </ul>
                 </div>`;
@@ -146,7 +144,7 @@ var renderCities = () => {
         if (lastCity){
             $('#search-city').attr("value", lastCity);
         } else {
-            $('#search-city').attr("value", "Austin");
+            $('#search-city').attr("value", "");
         }
     } else {
         // Build key of last city written to localStorage
